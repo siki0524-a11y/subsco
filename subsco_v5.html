@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080810">
+<title>Subsco — サブスクを見える化</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   VARIABLES & RESET
+============================================================ */
+:root {
+  --bg:          #080810;
+  --bg2:         #0e0e1a;
+  --glass:       rgba(255,255,255,0.04);
+  --glass-hover: rgba(255,255,255,0.07);
+  --border:      rgba(255,255,255,0.08);
+  --border-h:    rgba(255,255,255,0.16);
+  --text:        #f2f2f7;
+  --text-2:      #8e8ea0;
+  --text-3:      #3a3a50;
+  --accent:      #6c5ce7;
+  --accent-g:    rgba(108,92,231,0.25);
+  --accent-s:    rgba(108,92,231,0.1);
+  --green:       #00d68f;
+  --green-s:     rgba(0,214,143,0.1);
+  --amber:       #ffb300;
+  --amber-s:     rgba(255,179,0,0.1);
+  --red:         #ff6b6b;
+  --red-s:       rgba(255,107,107,0.1);
+  --blue:        #4fc3f7;
+  --blue-s:      rgba(79,195,247,0.1);
+  --r:           16px;
+  --r-sm:        10px;
+  --shadow:      0 8px 32px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  background: #080810 !important;
+  color: #f2f2f7 !important;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color-scheme: dark;
+}
+
+/* Subtle grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .5;
+}
+
+/* Radial glow bg */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(108,92,231,0.12), transparent);
+  pointer-events: none; z-index: 0;
+}
+
+/* ============================================================
+   LAYOUT
+============================================================ */
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 56px 20px 120px;
+  background: #080810;
+  color: #f2f2f7;
+}
+
+/* force text colors throughout */
+.logo-name, .stat-val, .sub-name, .list-title, .cta-title,
+.modal-title, .share-left .share-title, .empty-title,
+.total-val, .alert-name {
+  color: #f2f2f7 !important;
+}
+.tagline, .stat-label, .sub-meta, .cta-body, .share-left .share-sub,
+.empty-sub, .total-label, .alert-meta, .logo-sub, .footer {
+  color: #8e8ea0 !important;
+}
+.stat-val.hero {
+  background: linear-gradient(135deg, #fff 30%, #a78bfa) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+.stat-val.warn { color: #ffb300 !important; -webkit-text-fill-color: #ffb300 !important; }
+
+section { margin-bottom: 28px; }
+
+/* ============================================================
+   GLASS CARD BASE
+============================================================ */
+.card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--r);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+/* ============================================================
+   HEADER
+============================================================ */
+.header {
+  text-align: center;
+  padding-bottom: 8px;
+  animation: fadeUp .6s ease both;
+}
+
+.logo {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.logo span { color: var(--accent); }
+
+.tagline {
+  font-size: 13px;
+  color: var(--text-2);
+  font-weight: 400;
+  letter-spacing: .3px;
+}
+
+/* ============================================================
+   STATS GRID
+============================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  animation: fadeUp .6s ease .08s both;
+}
+
+.stat-card {
+  padding: 20px 16px;
+  text-align: center;
+}
+.stat-card:hover { border-color: var(--border-h); }
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+
+.stat-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.stat-val.hero {
+  font-size: 28px;
+  background: linear-gradient(135deg, #fff 30%, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-val.warn { color: var(--amber); }
+
+.stat-unit { font-size: 11px; font-weight: 400; color: var(--text-2); letter-spacing: 0; }
+
+.stat-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-top: 8px;
+  font-size: 10px; font-weight: 600;
+  padding: 3px 8px; border-radius: 20px;
+}
+.sb-green  { background: var(--green-s); color: var(--green); }
+.sb-amber  { background: var(--amber-s); color: var(--amber); }
+.sb-purple { background: var(--accent-s); color: #a78bfa; }
+.sb-muted  { background: rgba(255,255,255,0.05); color: var(--text-2); }
+
+/* ============================================================
+   CTA CARDS (shared)
+============================================================ */
+.cta-card {
+  padding: 24px 28px;
+  animation: fadeUp .6s ease .14s both;
+}
+
+.cta-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.cta-body {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 18px;
+  line-height: 1.7;
+}
+
+.cta-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .18s;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: #f2f2f7 !important;
+}
+.cta-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--border-h);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.cta-btn .icon { font-size: 14px; }
+
+.cta-btn.accent-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.cta-btn.accent-btn:hover {
+  background: #7d6ef0;
+  box-shadow: 0 0 20px var(--accent-g);
+}
+
+/* ============================================================
+   X SHARE
+============================================================ */
+.share-card {
+  padding: 24px 28px;
+  background: linear-gradient(135deg, rgba(108,92,231,0.08), rgba(29,161,242,0.06));
+  border-color: rgba(108,92,231,0.2);
+  animation: fadeUp .6s ease .18s both;
+}
+
+.share-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.share-left .share-title {
+  font-size: 14px; font-weight: 600; margin-bottom: 4px;
+}
+.share-left .share-sub {
+  font-size: 12px; color: var(--text-2);
+}
+
+.x-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px;
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .18s;
+  flex-shrink: 0;
+}
+.x-btn:hover { background: #111; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transform: translateY(-1px); }
+.x-logo { font-size: 16px; font-weight: 900; line-height: 1; }
+
+/* ============================================================
+   ALERTS
+============================================================ */
+.alert-section { animation: fadeUp .4s ease both; }
+
+.alert-card {
+  padding: 16px 20px;
+  border-color: rgba(255,179,0,0.25);
+  background: rgba(255,179,0,0.05);
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 8px;
+}
+.alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.alert-info { flex: 1; min-width: 0; }
+.alert-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.alert-meta { font-size: 11px; color: var(--amber); margin-top: 2px; }
+
+/* ============================================================
+   SUB LIST
+============================================================ */
+.list-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+  animation: fadeUp .6s ease .22s both;
+}
+.list-title { font-size: 15px; font-weight: 600; }
+.list-count { font-size: 12px; color: var(--text-2); }
+
+.filter-row {
+  display: flex; gap: 6px;
+  overflow-x: auto; scrollbar-width: none;
+  padding-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+  animation: fadeUp .6s ease .24s both;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+
+.chip {
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: transparent;
+  color: #8e8ea0 !important;
+  font-family: inherit;
+  transition: all .15s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.chip:hover { border-color: rgba(255,255,255,0.16); color: #f2f2f7 !important; }
+.chip.on { background: rgba(108,92,231,0.12); border-color: #6c5ce7; color: #a78bfa !important; }
+
+.sub-list { display: flex; flex-direction: column; gap: 8px; animation: fadeUp .6s ease .28s both; }
+
+.sub-card {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 44px 1fr auto auto auto;
+  align-items: center;
+  gap: 14px;
+  cursor: default;
+}
+.sub-card:hover { border-color: var(--border-h); background: var(--glass-hover); }
+.sub-card.removing {
+  animation: removeCard .35s ease forwards;
+}
+
+.sub-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+
+.sub-info { min-width: 0; }
+.sub-name {
+  font-size: 14px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-bottom: 3px;
+}
+.sub-meta { font-size: 11px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 7px; border-radius: 20px;
+  font-size: 10px; font-weight: 700;
+}
+.b-active { background: var(--green-s); color: var(--green); }
+.b-soon   { background: var(--amber-s); color: var(--amber); }
+.b-trial  { background: var(--blue-s);  color: var(--blue); }
+
+.sub-amt {
+  font-size: 14px; font-weight: 700;
+  letter-spacing: -.5px;
+  text-align: right; white-space: nowrap;
+}
+.sub-amt .unit { font-size: 10px; font-weight: 400; color: var(--text-2); }
+
+.sub-date { text-align: right; min-width: 64px; }
+.sub-date-main { font-size: 12px; font-weight: 600; }
+.sub-date-sub  { font-size: 10px; color: var(--text-2); margin-top: 2px; }
+
+.del-btn {
+  opacity: 0;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-2);
+  cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.sub-card:hover .del-btn { opacity: 1; }
+.del-btn:hover { background: var(--red-s); border-color: var(--red); color: var(--red); }
+@media (hover: none) { .del-btn { opacity: .4; } }
+
+/* Category icon bg */
+.ic-動画   { background: rgba(255,99,99,.12); }
+.ic-音楽   { background: rgba(155,120,255,.12); }
+.ic-ゲーム { background: rgba(0,214,143,.1); }
+.ic-仕事   { background: rgba(79,195,247,.1); }
+.ic-ニュース{ background: rgba(255,179,0,.1); }
+.ic-クラウド{ background: rgba(56,189,248,.1); }
+.ic-その他 { background: rgba(160,160,180,.08); }
+
+/* ============================================================
+   TOTAL ROW
+============================================================ */
+.total-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 4px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  animation: fadeUp .6s ease .3s both;
+}
+.total-label { font-size: 12px; color: var(--text-2); }
+.total-val   { font-size: 20px; font-weight: 700; letter-spacing: -1px; }
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 64px 20px;
+  animation: fadeUp .5s ease both;
+}
+.empty-icon { font-size: 52px; margin-bottom: 16px; opacity: .3; }
+.empty-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.empty-sub   { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
+
+/* ============================================================
+   ADD BUTTON (FAB)
+============================================================ */
+.fab {
+  position: fixed;
+  bottom: 28px; right: 20px;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none; color: #fff;
+  font-size: 26px; line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 24px var(--accent-g), 0 2px 8px rgba(0,0,0,0.4);
+  transition: all .2s;
+  z-index: 100;
+}
+.fab:hover { background: #7d6ef0; transform: scale(1.08); box-shadow: 0 8px 32px var(--accent-g); }
+.fab:active { transform: scale(.96); }
+
+@media (min-width: 600px) {
+  .fab { bottom: 36px; right: 36px; }
+}
+
+/* ============================================================
+   MODAL
+============================================================ */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 200;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.overlay.open { display: flex; }
+@media (min-width: 600px) { .overlay { align-items: center; } }
+
+.modal {
+  background: #13131f !important;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 24px 24px 0 0;
+  padding: 12px 24px 40px;
+  width: 100%; max-width: 480px;
+  animation: slideUp .3s cubic-bezier(.34,1.4,.64,1) both;
+  color: #f2f2f7;
+}
+@media (min-width: 600px) {
+  .modal { border-radius: 24px; padding: 32px; animation-name: modalIn; }
+}
+
+.handle {
+  width: 36px; height: 4px;
+  background: var(--border-h); border-radius: 2px;
+  margin: 0 auto 24px;
+}
+@media (min-width: 600px) { .handle { display: none; } }
+
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; letter-spacing: -.3px; }
+
+.fields { display: flex; flex-direction: column; gap: 16px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.field label {
+  display: block;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .8px;
+  color: var(--text-2); margin-bottom: 8px;
+}
+.field input, .field select {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--r-sm);
+  color: #f2f2f7 !important;
+  font-family: inherit; font-size: 14px;
+  outline: none; transition: border-color .15s;
+  -webkit-appearance: none; appearance: none;
+}
+.field input:focus, .field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-s);
+}
+.field input::placeholder { color: #3a3a50 !important; }
+.field select option { background: #13131f; color: #f2f2f7; }
+
+.modal-btns { display: flex; gap: 10px; margin-top: 24px; }
+
+.btn-primary {
+  flex: 1; padding: 13px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--r-sm);
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.btn-primary:hover { background: #7d6ef0; box-shadow: 0 0 20px var(--accent-g); }
+
+.btn-ghost {
+  padding: 13px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font-family: inherit; font-size: 14px;
+  cursor: pointer; transition: all .15s;
+}
+.btn-ghost:hover { border-color: var(--border-h); color: var(--text); }
+
+/* ============================================================
+   TOAST
+============================================================ */
+.toast {
+  position: fixed;
+  bottom: 100px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: #1e1e2e;
+  border: 1px solid var(--border-h);
+  border-radius: var(--r-sm);
+  padding: 10px 20px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text);
+  white-space: nowrap; z-index: 999;
+  opacity: 0;
+  transition: all .3s cubic-bezier(.34,1.4,.64,1);
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (min-width: 600px) { .toast { bottom: 40px; } }
+
+/* ============================================================
+   SHARE POP
+============================================================ */
+.share-pop {
+  position: fixed;
+  bottom: 88px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1a1a2e;
+  border: 1px solid rgba(108,92,231,0.35);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+  white-space: nowrap; z-index: 300;
+  opacity: 0; pointer-events: none;
+  transition: all .35s cubic-bezier(.34,1.4,.64,1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.share-pop.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.share-pop-msg { font-size: 13px; font-weight: 600; color: var(--text); }
+.share-pop-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  background: #000; color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.share-pop-btn:hover { background: #111; }
+.share-pop-close {
+  background: transparent; border: none;
+  color: var(--text-2); cursor: pointer;
+  font-size: 14px; padding: 2px 4px;
+  transition: color .15s;
+}
+.share-pop-close:hover { color: var(--text); }
+
+@media (max-width: 480px) {
+  .share-pop { bottom: 100px; flex-wrap: wrap; white-space: normal; max-width: calc(100vw - 32px); }
+}
+@media (min-width: 600px) { .share-pop { bottom: 40px; } }
+
+/* ============================================================
+   FOOTER
+============================================================ */
+.footer {
+  text-align: center;
+  padding: 32px 0 8px;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.8;
+}
+.footer span { color: var(--text-2); }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(60px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.94) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes removeCard {
+  to { opacity: 0; transform: translateX(24px); max-height: 0; padding: 0; margin: 0; }
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: .4; }
+}
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-card { padding: 14px 12px; }
+  .stat-val { font-size: 18px; }
+  .stat-val.hero { font-size: 20px; }
+  .stat-label { font-size: 9px; letter-spacing: .6px; margin-bottom: 6px; }
+  .stat-badge { font-size: 9px; padding: 2px 6px; margin-top: 6px; }
+  .share-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .x-btn { width: 100%; justify-content: center; }
+  .cta-card { padding: 18px; }
+  .cta-btns { flex-direction: column; }
+  .cta-btn { width: 100%; justify-content: center; }
+  .field-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .wrap { padding: 28px 14px 110px; }
+  .logo { font-size: 26px; }
+  .sub-card {
+    position: relative;
+    grid-template-columns: 42px 1fr 28px;
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
+    padding: 14px 14px;
+  }
+  .sub-card .sub-icon {
+    grid-column: 1; grid-row: 1 / 3;
+    width: 40px; height: 40px; font-size: 18px;
+    align-self: center;
+  }
+  .sub-card .sub-info  { grid-column: 2; grid-row: 1; }
+  .sub-card .sub-amt   { grid-column: 2; grid-row: 2; text-align: left; font-size: 13px; }
+  .sub-card .sub-date  { display: none; }
+  .sub-card .del-btn   { grid-column: 3; grid-row: 1 / 3; align-self: center; justify-self: center; opacity: .5; width: 26px; height: 26px; font-size: 12px; }
+  .empty-state { padding: 48px 16px; }
+  .empty-icon  { font-size: 40px; }
+  .empty-title { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ① HEADER -->
+  <section class="header">
+    <div class="logo">sub<span>sco</span></div>
+    <div class="tagline">サブスクを見える化して、ムダを減らす</div>
+  </section>
+
+  <!-- ② STATS -->
+  <section>
+    <div class="stats-grid" id="statsGrid"></div>
+  </section>
+
+  <!-- ③ CTA 1: 固定費見直し -->
+  <section>
+    <div class="card cta-card" id="cta1" style="display:none">
+      <div class="cta-title">固定費を見直して、年間コストを下げる</div>
+      <div class="cta-body">サブスク整理と一緒にスマホ代やネット代も見直すと節約効果が大きくなります。</div>
+      <div class="cta-btns" id="cta1Btns"></div>
+    </div>
+  </section>
+
+  <!-- ④ X シェア -->
+  <section>
+    <div class="card share-card" id="shareCard" style="display:none">
+      <div class="share-inner">
+        <div class="share-left">
+          <div class="share-title">この結果をXでシェア 🔥</div>
+          <div class="share-sub">あなたの支出データから投稿文を自動生成します</div>
+        </div>
+        <button class="x-btn" onclick="openXShare()">
+          <span class="x-logo">𝕏</span> Xでシェア
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ ALERT -->
+  <section class="alert-section" id="alertSection" style="display:none"></section>
+
+  <!-- ⑥ CTA 2: サービス比較 -->
+  <section>
+    <div class="card cta-card" id="cta2" style="display:none">
+      <div class="cta-title">更新前に、もっと合うサービスを見てみる</div>
+      <div class="cta-body">料金や機能を比較するとムダを減らせます。</div>
+      <div class="cta-btns" id="cta2Btns"></div>
+    </div>
+  </section>
+
+  <!-- ⑦ SUB LIST -->
+  <section>
+    <div class="list-header">
+      <div class="list-title">登録中のサブスク</div>
+      <div class="list-count" id="listCount"></div>
+    </div>
+    <div class="filter-row" id="filterRow">
+      <button class="chip on" onclick="setFilter('all',this)">すべて</button>
+      <button class="chip" onclick="setFilter('動画',this)">🎬 動画</button>
+      <button class="chip" onclick="setFilter('音楽',this)">🎵 音楽</button>
+      <button class="chip" onclick="setFilter('ゲーム',this)">🎮 ゲーム</button>
+      <button class="chip" onclick="setFilter('仕事',this)">💼 仕事</button>
+      <button class="chip" onclick="setFilter('クラウド',this)">☁️ クラウド</button>
+      <button class="chip" onclick="setFilter('その他',this)">📦 その他</button>
+    </div>
+    <div class="sub-list" id="subList"></div>
+    <div class="total-row" id="totalRow" style="display:none">
+      <div class="total-label" id="totalLabel"></div>
+      <div class="total-val" id="totalVal"></div>
+    </div>
+  </section>
+
+  <!-- ⑨ CTA 3: 支出管理 -->
+  <section>
+    <div class="card cta-card" id="cta3" style="display:none">
+      <div class="cta-title">整理できたら次は支出の見える化</div>
+      <div class="cta-body">サブスクを整理したら、次は全体の家計も把握してみましょう。</div>
+      <div class="cta-btns" id="cta3Btns"></div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>Subsco — サブスクを見える化して、Xでシェア</div>
+    <div><span>登録・ログイン不要。データはブラウザのみに保存されます。</span></div>
+  </footer>
+
+</div><!-- /wrap -->
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()" title="サブスクを追加">＋</button>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SHARE POP（削除後に表示） -->
+<div class="share-pop" id="sharePop">
+  <div class="share-pop-msg" id="sharePopMsg"></div>
+  <button class="share-pop-btn" onclick="openXShare()">
+    <span style="font-weight:900">𝕏</span> Xでシェア
+  </button>
+  <button class="share-pop-close" onclick="document.getElementById('sharePop').classList.remove('show')">✕</button>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="handle"></div>
+    <div class="modal-title">サブスクを追加</div>
+    <div class="fields">
+      <div class="field">
+        <label>サービス名</label>
+        <input id="iName" type="text" placeholder="例: Netflix" maxlength="30" autocomplete="off">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>月額（円）</label>
+          <input id="iAmt" type="number" placeholder="1490" min="0" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>カテゴリ</label>
+          <select id="iCat">
+            <option value="動画">🎬 動画</option>
+            <option value="音楽">🎵 音楽</option>
+            <option value="ゲーム">🎮 ゲーム</option>
+            <option value="仕事">💼 仕事</option>
+            <option value="ニュース">📰 ニュース</option>
+            <option value="クラウド">☁️ クラウド</option>
+            <option value="その他">📦 その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>次回更新日</label>
+          <input id="iDate" type="date">
+        </div>
+        <div class="field">
+          <label>ステータス</label>
+          <select id="iStatus">
+            <option value="active">✅ アクティブ</option>
+            <option value="trial">🔵 トライアル</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn-primary" onclick="addSub()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — CTAリンク管理
+============================================================ */
+const CONFIG = {
+  siteUrl: 'https://your-subsco-url.com', // 公開後に変更
+  cta1: [
+    { label: 'スマホ代を見直す', icon: '📱', url: 'https://example.com/mobile' },
+    { label: 'ネット回線を見直す', icon: '🌐', url: 'https://example.com/net' },
+    { label: '家計管理サービスを見る', icon: '💰', url: 'https://example.com/kakeibo' },
+  ],
+  cta2: [
+    { label: '動画サービス比較', icon: '🎬', url: 'https://example.com/video' },
+    { label: '音楽サービス比較', icon: '🎵', url: 'https://example.com/music' },
+    { label: 'クラウド代替を見る', icon: '☁️', url: 'https://example.com/cloud' },
+  ],
+  cta3: [
+    { label: '家計簿アプリを見る', icon: '📒', url: 'https://example.com/kakeibo2' },
+    { label: '支出管理を始める', icon: '📊', url: 'https://example.com/spending' },
+    { label: '固定費見直しガイド', icon: '📋', url: 'https://example.com/guide' },
+  ],
+};
+
+const ICONS = {動画:'🎬',音楽:'🎵',ゲーム:'🎮',仕事:'💼',ニュース:'📰',クラウド:'☁️',その他:'📦'};
+const STORAGE_KEY = 'subsco_v2';
+
+/* ============================================================
+   DATA
+============================================================ */
+function loadSubs() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return [];
+}
+function saveSubs() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(subs)); } catch(e) {}
+}
+
+let subs     = loadSubs();
+let nextId   = subs.length ? Math.max(...subs.map(s=>s.id))+1 : 1;
+let filter   = 'all';
+let deleted  = []; // 削除履歴（節約額計算用）
+
+/* ============================================================
+   HELPERS
+============================================================ */
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = n => n.toLocaleString('ja-JP');
+
+function daysUntil(d) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.ceil((new Date(d) - t) / 86400000);
+}
+function getStatus(s) {
+  if (s.status === 'trial') return 'trial';
+  return daysUntil(s.date) <= 7 ? 'soon' : 'active';
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+let _toastT;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+/* ============================================================
+   X SHARE
+============================================================ */
+function generateShareText() {
+  const monthly  = subs.reduce((a,s)=>a+s.amount, 0);
+  const yearly   = monthly * 12;
+  const savedAmt = deleted.reduce((a,s)=>a+s.amount, 0);
+  const savedCnt = deleted.length;
+  const url      = CONFIG.siteUrl;
+
+  const templates = [];
+
+  if (savedAmt > 0) {
+    templates.push(
+      `${savedCnt}件のサブスクを整理して月${fmt(savedAmt)}円削減できた💡\n無料ツールで簡単にできたよ\n${url}`,
+      `使ってないサブスクを${savedCnt}件解約したら月${fmt(savedAmt)}円浮いた…\n早く気づけばよかった\n${url}`,
+    );
+  }
+
+  if (yearly >= 200000) {
+    templates.push(
+      `サブスクの年間支出が${fmt(yearly)}円だった…\n月額で見てると感覚マヒするね😇\n${url} #Subsco`,
+    );
+  }
+
+  templates.push(
+    `私のサブスク年間支出は${fmt(yearly)}円でした\n月額${fmt(monthly)}円。無料で整理できるよ👇\n${url}`,
+    `月額${fmt(monthly)}円のサブスク、年額だと${fmt(yearly)}円\n数字で見るとヤバい😂\n${url} #固定費`,
+    `サブスクの見直し、Subscoで整理してみた\n年間${fmt(yearly)}円払ってたの知らなかった…\n${url}`,
+  );
+
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
+function openXShare() {
+  const text = generateShareText();
+  const url  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank', 'noopener');
+}
+
+/* ============================================================
+   RENDER — STATS
+============================================================ */
+function renderStats() {
+  const monthly   = subs.reduce((a,s)=>a+s.amount, 0);
+  const yearly    = monthly * 12;
+  const soonCount = subs.filter(s=>getStatus(s)==='soon').length;
+
+  const emptyVal = `<span style="color:var(--text-3)">——</span>`;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="card stat-card">
+      <div class="stat-label">月額合計</div>
+      <div class="stat-val">${subs.length ? '¥'+fmt(monthly) : emptyVal}</div>
+      <div class="stat-badge sb-muted">毎月</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">年額換算</div>
+      <div class="stat-val hero">${subs.length ? '¥'+fmt(yearly) : emptyVal}</div>
+      <div class="stat-badge sb-purple">年間コスト</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">登録数</div>
+      <div class="stat-val">${subs.length}<span class="stat-unit"> 件</span></div>
+      <div class="stat-badge ${subs.length ? 'sb-green' : 'sb-muted'}">管理中</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">まもなく更新</div>
+      <div class="stat-val warn ${soonCount>0?'pulse':''}">${subs.length ? soonCount : emptyVal}<span class="stat-unit">${subs.length ? ' 件' : ''}</span></div>
+      ${soonCount>0
+        ? '<div class="stat-badge sb-amber">⚠ 7日以内</div>'
+        : `<div class="stat-badge ${subs.length?'sb-green':'sb-muted'}">${subs.length?'✓ 余裕あり':'未登録'}</div>`}
+    </div>
+  `;
+}
+
+/* ============================================================
+   RENDER — CTAs
+============================================================ */
+function renderCTA(id, btnId) {
+  const el = document.getElementById(id);
+  const btnContainer = document.getElementById(btnId);
+  const cfgKey = id.replace('cta','cta'); // same
+  const btns = CONFIG[id];
+  btnContainer.innerHTML = btns.map(b=>
+    `<a class="cta-btn" href="${b.url}" target="_blank" rel="noopener">
+       <span class="icon">${b.icon}</span>${b.label}
+     </a>`
+  ).join('');
+  el.style.display = subs.length > 0 ? 'block' : 'none';
+}
+
+function renderAllCTAs() {
+  renderCTA('cta1','cta1Btns');
+  renderCTA('cta2','cta2Btns');
+  renderCTA('cta3','cta3Btns');
+  document.getElementById('shareCard').style.display = subs.length > 0 ? 'block' : 'none';
+}
+
+/* ============================================================
+   RENDER — ALERTS
+============================================================ */
+function renderAlerts() {
+  const soonSubs = subs.filter(s=>getStatus(s)==='soon');
+  const sec = document.getElementById('alertSection');
+  const cta2 = document.getElementById('cta2');
+  if (!soonSubs.length) {
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = 'block';
+  sec.innerHTML = soonSubs.map(s=>{
+    const d = daysUntil(s.date);
+    const dTxt = d === 0 ? '今日が更新日！' : `${d}日後に更新`;
+    return `<div class="card alert-card">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-info">
+        <div class="alert-name">${esc(s.name)}</div>
+        <div class="alert-meta">${dTxt} · ¥${fmt(s.amount)}/月</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   RENDER — LIST
+============================================================ */
+function renderList() {
+  let list = filter === 'all' ? [...subs] : subs.filter(s=>s.category===filter);
+  const el = document.getElementById('subList');
+  const totalRow = document.getElementById('totalRow');
+
+  // ⑩ 空状態
+  if (!subs.length) {
+    const savedAmt = deleted.reduce((a,s)=>a+s.amount,0);
+    const isFirstVisit = deleted.length === 0;
+    el.innerHTML = isFirstVisit
+      ? `<div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">サブスクを登録してみよう</div>
+          <div class="empty-sub">今使っているサービスを追加すると<br>月額・年額コストがすぐにわかります</div>
+          <button class="cta-btn accent-btn" style="margin:0 auto" onclick="openModal()">
+            ＋ 最初のサブスクを追加
+          </button>
+        </div>`
+      : `<div class="empty-state">
+          <div class="empty-icon">✨</div>
+          <div class="empty-title">すべて整理できました！</div>
+          <div class="empty-sub">${savedAmt>0?`月 <strong style="color:var(--green)">¥${fmt(savedAmt)}</strong> の節約に成功！<br>`:``}結果をXでシェアしてみましょう</div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="cta-btn accent-btn" onclick="openXShare()"><span style="font-weight:900">𝕏</span> Xでシェア</button>
+            <button class="cta-btn" onclick="openModal()">＋ 追加する</button>
+          </div>
+        </div>`;
+    totalRow.style.display = 'none';
+    document.getElementById('listCount').textContent = '';
+    return;
+  }
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-sub">このカテゴリには登録がありません</div>
+    </div>`;
+    totalRow.style.display = 'none';
+    document.getElementById('listCount').textContent = `${subs.length}件`;
+    return;
+  }
+
+  el.innerHTML = list.map(s=>{
+    const st = getStatus(s);
+    const d  = daysUntil(s.date);
+    const dTxt = d<0 ? '期限切れ' : d===0 ? '今日！' : `${d}日後`;
+    const [,mm,dd] = s.date.split('-');
+    const badge = st==='active'
+      ? `<span class="badge b-active">Active</span>`
+      : st==='trial'
+      ? `<span class="badge b-trial">Trial</span>`
+      : `<span class="badge b-soon pulse">まもなく</span>`;
+    return `<div class="card sub-card" id="sc-${s.id}">
+      <div class="sub-icon ic-${s.category}">${ICONS[s.category]||'📦'}</div>
+      <div class="sub-info">
+        <div class="sub-name">${esc(s.name)}</div>
+        <div class="sub-meta">${s.category} ${badge}</div>
+      </div>
+      <div class="sub-amt">¥${fmt(s.amount)}<span class="unit">/月</span></div>
+      <div class="sub-date">
+        <div class="sub-date-main">${mm}/${dd}</div>
+        <div class="sub-date-sub">${dTxt}</div>
+      </div>
+      <button class="del-btn" onclick="deleteSub(${s.id})" title="削除">✕</button>
+    </div>`;
+  }).join('');
+
+  const total = list.reduce((a,s)=>a+s.amount,0);
+  document.getElementById('listCount').textContent = `${list.length}件`;
+  totalRow.style.display  = 'flex';
+  document.getElementById('totalLabel').textContent = `${list.length}件 合計`;
+  document.getElementById('totalVal').textContent   = `¥${fmt(total)}/月`;
+}
+
+/* ============================================================
+   RENDER ALL
+============================================================ */
+function renderAll() {
+  renderStats();
+  renderAlerts();
+  renderList();
+  renderAllCTAs();
+}
+
+/* ============================================================
+   FILTER
+============================================================ */
+function setFilter(f, el) {
+  filter = f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  renderList();
+}
+
+/* ============================================================
+   MODAL
+============================================================ */
+function openModal() {
+  document.getElementById('overlay').classList.add('open');
+  const next = new Date(); next.setMonth(next.getMonth()+1);
+  document.getElementById('iDate').value   = next.toISOString().split('T')[0];
+  document.getElementById('iName').value   = '';
+  document.getElementById('iAmt').value    = '';
+  document.getElementById('iStatus').value = 'active';
+  setTimeout(()=>document.getElementById('iName').focus(), 60);
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+function handleOverlayClick(e) { if(e.target.id==='overlay') closeModal(); }
+
+/* ============================================================
+   ADD / DELETE
+============================================================ */
+function addSub() {
+  const name   = document.getElementById('iName').value.trim();
+  const amount = parseInt(document.getElementById('iAmt').value)||0;
+  const cat    = document.getElementById('iCat').value;
+  const date   = document.getElementById('iDate').value;
+  const status = document.getElementById('iStatus').value;
+  if (!name || !date) { showToast('⚠ 名前と更新日を入力してください'); return; }
+  subs.push({id:nextId++, name, amount, category:cat, date, status});
+  saveSubs();
+  closeModal();
+  renderAll();
+  showToast(`✓ ${name} を追加しました`);
+}
+
+function deleteSub(id) {
+  const sub = subs.find(s=>s.id===id);
+  if (!sub) return;
+  const card = document.getElementById(`sc-${id}`);
+  if (card) {
+    card.classList.add('removing');
+    setTimeout(()=>{
+      subs = subs.filter(s=>s.id!==id);
+      deleted.push(sub);
+      saveSubs();
+      renderAll();
+      showSharePop(sub);
+    }, 340);
+  }
+}
+
+/* 削除後の即シェアポップ */
+function showSharePop(sub) {
+  const savedTotal = deleted.reduce((a,s)=>a+s.amount, 0);
+  const pop = document.getElementById('sharePop');
+  document.getElementById('sharePopMsg').textContent =
+    `月 ¥${fmt(savedTotal)} 削減できました 🎉`;
+  pop.classList.add('show');
+  clearTimeout(pop._t);
+  pop._t = setTimeout(()=>pop.classList.remove('show'), 6000);
+}
+
+/* ============================================================
+   KEYBOARD
+============================================================ */
+document.addEventListener('keydown', e=>{
+  if (e.key === 'Escape') closeModal();
+});
+document.getElementById('iName').addEventListener('keydown', e=>{
+  if (e.key === 'Enter') document.getElementById('iAmt').focus();
+});
+document.getElementById('iAmt').addEventListener('keydown', e=>{
+  if (e.key === 'Enter') addSub();
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+renderAll();
+</script>
+</body>
+</html>
